@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Order Management System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            background-image: url("img1.jpeg");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #4CAF50;
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+
+        .notification.info {
+            background: #2196F3;
+        }
+
+        /* Table Selection */
+        .table-selection {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+            margin: 2rem auto;
+            max-width: 600px;
+            color: #fff;
+            background-size: cover;
+            background-position: center;
+            font-family: 'monospace';
+            color: #FFF;
+            font-weight: bold;
+            font-size: 2rem;
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin: 2rem auto;
+            max-width: 800px;
+            padding: 1rem;
+        }
+
+        .table-btn {
+            padding: 1.5rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.0rem;
+            color: #000000;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .table-btn:hover {
+            background: #4CAF50;
+            border-color: #bbb;
+        }
+
+        .table-btn.selected {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+        }
+
+        .table-btn.occupied {
+            background: #ffcccb;
+            color: #d32f2f;
+        }
+
+        .table-btn.occupied::after {
+            content: "🔴";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.8rem;
+        }
+
+        /* Menu System */
+        .menu-nav {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,1);
+        }
+
+        .menu-nav button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .menu-nav button:hover, .menu-nav button.active {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .menu-category {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .menu-category.active {
+            display: block;
+        }
+
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .menu-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 150px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .item-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .item-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .item-price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .item-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .add-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        .add-btn:hover {
+            background: #45a049;
+        }
+
+        /* Search and Filter */
+        .search-filter {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex-grow: 1;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        /* Order Summary */
+        #order-summary {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .order-header {
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .order-totals {
+            border-top: 2px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .final-total {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #4CAF50;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Kitchen Display */
+        .kitchen-display {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .kitchen-order {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .kitchen-order.ready {
+            border-left-color: #4CAF50;
+        }
+
+        /* Payment Section */
+        #payment-section {
+            display: none;
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .payment-method {
+            border: 2px solid #ddd;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .payment-method.selected {
+            border-color: #4CAF50;
+            background: #f8fff8;
+        }
+
+        .payment-method:hover {
+            border-color: #bbb;
+        }
+
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            margin: 1rem auto;
+            display: block;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: white;
+        }
+
+        /* Buttons */
+        .primary-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .primary-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background: #ddd;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .secondary-btn:hover {
+            background: #bbb;
+        }
+
+        /* Split Bill Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #order-summary {
+                position: static;
+                width: 100%;
+                margin-top: 20px;
+                max-height: none;
+            }
+            
+            .kitchen-display {
+                position: static;
+                width: 100%;
+                margin-top: 20px;
+                max-height: none;
+            }
+            
+            .table-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .menu-items {
+                grid-template-columns: 1fr;
+            }
+
+            .search-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Notification -->
+        <div id="notification" class="notification"></div>
+
+        <!-- Table Selection -->
+        <section class="table-selection" id="table-selection">
+            <h1>Welcome</h1>
+            <h2>Please Select Your Table</h2>
+            <div class="table-grid" id="table-grid"></div>
+        </section>
+
+        <!-- Main Interface -->
+        <div id="main-interface" style="display: none;">
+            <!-- Search and Filter -->
+            <div class="search-filter">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search menu items..." onkeyup="searchMenu()">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterByPrice('all')">All Prices</button>
+                    <button class="filter-btn" onclick="filterByPrice('under10')">Under $10</button>
+                    <button class="filter-btn" onclick="filterByPrice('10to20')">$10-$20</button>
+                    <button class="filter-btn" onclick="filterByPrice('over20')">Over $20</button>
+                </div>
+            </div>
+
+            <!-- Menu Navigation -->
+            <nav class="menu-nav">
+                <button onclick="showCategory('veg')" class="active">Vegetarian</button>
+                <button onclick="showCategory('non-veg')">Non-Veg</button>
+                <button onclick="showCategory('drinks')">Drinks</button>
+                <button onclick="showCategory('desserts')">Desserts</button>
+            </nav>
+
+            <!-- Menu Sections -->
+            <section class="menu-category active" id="veg"></section>
+            <section class="menu-category" id="non-veg"></section>
+            <section class="menu-category" id="drinks"></section>
+            <section class="menu-category" id="desserts"></section>
+
+            <!-- Order Summary -->
+            <div id="order-summary">
+                <div class="order-header">
+                    <h3>Order for Table <span id="current-table">-</span></h3>
+                    <small id="order-time"></small>
+                </div>
+                <div id="order-items"></div>
+                <div class="order-totals">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span>$<span id="subtotal">0.00</span></span>
+                    </div>
+                    <div class="total-row">
+                        <span>Tax (8%):</span>
+                        <span>$<span id="tax">0.00</span></span>
+                    </div>
+                    <div class="total-row">
+                        <span>Tip:</span>
+                        <select id="tip-select" onchange="updateTotals()">
+                            <option value="0">No Tip</option>
+                            <option value="0.15">15%</option>
+                            <option value="0.18">18%</option>
+                            <option value="0.20" selected>20%</option>
+                            <option value="0.25">25%</option>
+                        </select>
+                    </div>
+                    <div class="total-row">
+                        <span>Tip Amount:</span>
+                        <span>$<span id="tip-amount">0.00</span></span>
+                    </div>
+                    <div class="total-row final-total">
+                        <span>Total:</span>
+                        <span>$<span id="order-total">0.00</span></span>
+                    </div>
+                </div>
+                <div class="order-actions">
+                    <button onclick="submitOrder()" class="primary-btn" id="submit-btn" disabled>Submit Order</button>
+                    <button onclick="clearOrder()" class="secondary-btn">Clear</button>
+                </div>
+                <div class="order-actions">
+                    <button onclick="saveOrder()" class="secondary-btn">Save Order</button>
+                    <button onclick="openSplitBill()" class="secondary-btn">Split Bill</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kitchen Display -->
+        <div class="kitchen-display" id="kitchen-display" style="display: none;">
+            <h3>🍳 Kitchen Orders</h3>
+            <div id="kitchen-orders"></div>
+        </div>
+
+        <!-- Split Bill Modal -->
+        <div id="split-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeSplitBill()">&times;</span>
+                <h3>Split Bill</h3>
+                <p>Number of ways to split:</p>
+                <input type="number" id="split-ways" min="2" max="10" value="2">
+                <div id="split-results"></div>
+                <button onclick="calculateSplit()" class="primary-btn">Calculate Split</button>
+            </div>
+        </div>
+
+        <!-- Payment Section -->
+        <section id="payment-section">
+            <h2>Payment for Table <span id="payment-table">-</span></h2>
+            <div class="order-totals">
+                <div class="final-total">
+                    <span>Total Amount: $<span id="payment-amount">0.00</span></span>
+                </div>
+            </div>
+            <div id="payment-options">
+                <div class="payment-method" onclick="selectPayment('cash')">
+                    <h3>💵 Cash Payment</h3>
+                    <p>Pay with cash at the counter</p>
+                </div>
+                <div class="payment-method" onclick="selectPayment('card')">
+                    <h3>💳 Card Payment</h3>
+                    <p>Credit/Debit card payment</p>
+                </div>
+                <div class="payment-method" onclick="selectPayment('fonepay')">
+                    <h3>📱 Fonepay QR</h3>
+                    <p>Scan to pay digitally</p>
+                </div>
+            </div>
+            <div id="payment-details">
+                <div id="cash-payment" style="display: none;">
+                    <h3 style="margin: 15px 0;">Total Amount: $<span id="cash-amount">0.00</span></h3>
+                    <p>Please pay at the counter. Show this screen to the cashier.</p>
+                    <button onclick="completePayment()" class="primary-btn">Confirm Cash Payment</button>
+                </div>
+                <div id="card-payment" style="display: none;">
+                    <h3 style="margin: 15px 0;">Insert or Tap Your Card</h3>
+                    <p>Please follow the prompts on the card reader.</p>
+                    <button onclick="completePayment()" class="primary-btn">Payment Completed</button>
+                </div>
+                <div id="fonepay-qr" style="display: none;">
+                    <img id="qr-code-image" class="qr-code" alt="Fonepay QR Code">
+                    <p>Scan the QR code with your Fonepay app</p>
+                    <button onclick="completePayment()" class="primary-btn">Payment Completed</button>
+                </div>
+            </div>
+            <button onclick="goBackToOrder()" class="secondary-btn" style="margin-top: 20px;">Back to Order</button>
+        </section>
+    </div>
+
+    <script>
+        let currentTable = null;
+        let orders = {};
+        let occupiedTables = new Set([2, 5, 8]); // Demo occupied tables
+        let savedOrders = {};
+        let kitchenOrders = [];
+        let currentFilter = 'all';
+        let orderStartTime = null;
+
+        const menuItems = {
+            veg: [
+                { name: 'Paneer Tikka', price: 12.99, image: '🧆', description: 'Grilled cottage cheese with spices', category: 'veg' },
+                { name: 'Vegetable Biryani', price: 14.50, image: '🍛', description: 'Aromatic rice with mixed vegetables', category: 'veg' },
+                { name: 'Dal Makhani', price: 9.99, image: '🍲', description: 'Creamy black lentils cooked overnight', category: 'veg' },
+                { name: 'Aloo Gobi', price: 8.99, image: '🥔', description: 'Spiced potatoes and cauliflower', category: 'veg' }
+
+            ],
+            'non-veg': [
+                { name: 'Butter Chicken', price: 16.99, image: '🍗', description: 'Tender chicken in creamy tomato sauce', category: 'non-veg' },
+                { name: 'Chicken Biryani', price: 15.50, image: '🍛', description: 'Fragrant rice with marinated chicken', category: 'non-veg' },
+                { name: 'Fish Curry', price: 18.99, image: '🐟', description: 'Fresh fish in coconut curry', category: 'non-veg' },
+                { name: 'Lamb Korma', price: 19.99, image: '🍖', description: 'Slow-cooked lamb in rich gravy', category: 'non-veg' }
+            ],
+            drinks: [
+                { name: 'Mango Lassi', price: 4.99, image: '🥤', description: 'Fresh mango yogurt drink', category: 'drinks' },
+                { name: 'Masala Chai', price: 3.50, image: '☕', description: 'Spiced Indian tea', category: 'drinks' },
+                { name: 'Fresh Lime Soda', price: 3.99, image: '🍋', description: 'Refreshing lime with soda', category: 'drinks' },
+                { name: 'Kulfi Shake', price: 5.99, image: '🍦', description: 'Traditional Indian ice cream shake', category: 'drinks' }
+            ],
+            desserts: [
+                { name: 'Gulab Jamun', price: 6.99, image: '🍯', description: 'Sweet milk dumplings in syrup', category: 'desserts' },
+                { name: 'Kulfi', price: 5.99, image: '🍦', description: 'Traditional Indian ice cream', category: 'desserts' },
+                { name: 'Ras Malai', price: 7.99, image: '🥛', description: 'Cottage cheese in sweet milk', category: 'desserts' },
+                { name: 'Kheer', price: 4.99, image: '🍚', description: 'Rice pudding with nuts', category: 'desserts' }
+            ]
+        };
+
+        function initialize() {
+            // Initialize tables
+            const grid = document.getElementById('table-grid');
+            for (let i = 1; i <= 12; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'table-btn';
+                if (occupiedTables.has(i)) {
+                    btn.className += ' occupied';
+                }
+                btn.textContent = i;
+                btn.onclick = () => selectTable(i);
+                grid.appendChild(btn);
+            }
+
+            // Populate menu items
+            Object.entries(menuItems).forEach(([category, items]) => {
+                const container = document.getElementById(category);
+                const menuDiv = document.createElement('div');
+                menuDiv.className = 'menu-items';
+                menuDiv.id = `${category}-items`;
+                
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item';
+                    div.setAttribute('data-price', item.price);
+                    div.setAttribute('data-name', item.name.toLowerCase());
+                    div.innerHTML = `
+                        <div class="item-image">${item.image}</div>
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-price">$${item.price.toFixed(2)}</div>
+                        <div class="item-controls">
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="adjustMenuQuantity('${item.name}', -1)">-</button>
+                                <span class="menu-quantity" id="menu-qty-${item.name.replace(/\s+/g, '')}" data-item="${item.name}">0</span>
+                                <button class="qty-btn" onclick="adjustMenuQuantity('${item.name}', 1)">+</button>
+                            </div>
+                            <button onclick="addToOrder('${item.name}', ${item.price})" class="add-btn">
+                                Add to Order
+                            </button>
+                        </div>
+                    `;
+                    menuDiv.appendChild(div);
+                });
+                
+                container.appendChild(menuDiv);
+            });
+
+            showNotification('Welcome! Please select a table to start ordering.', 'info');
+        }
+
+        function selectTable(tableNumber) {
+            if (occupiedTables.has(tableNumber)) {
+                showNotification(`Table ${tableNumber} is currently occupied!`, 'error');
+                return;
+            }
+
+            currentTable = tableNumber;
+            orderStartTime = new Date();
+            
+            document.querySelectorAll('.table-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            if (!orders[tableNumber]) orders[tableNumber] = [];
+            
+            document.getElementById('table-selection').style.display = 'none';
+            document.getElementById('main-interface').style.display = 'block';
+            document.getElementById('kitchen-display').style.display = 'block';
+            document.getElementById('current-table').textContent = tableNumber;
+            document.getElementById('order-time').textContent = `Started: ${orderStartTime.toLocaleTimeString()}`;
+            
+            showCategory('veg');
+            updateOrderDisplay();
+            showNotification(`Table ${tableNumber} selected. Start adding items to your order!`, 'success');
+        }
+
+        function adjustMenuQuantity(itemName, delta) {
+            const qtySpan = document.getElementById(`menu-qty-${itemName.replace(/\s+/g, '')}`);
+            let currentQty = parseInt(qtySpan.textContent) || 0;
+            currentQty = Math.max(0, currentQty + delta);
+            qtySpan.textContent = currentQty;
+        }
+
+        function addToOrder(itemName, price) {
+            if (!currentTable) {
+                showNotification('Please select a table first!', 'error');
+                return;
+            }
+
+            const qtySpan = document.getElementById(`menu-qty-${itemName.replace(/\s+/g, '')}`);
+            const quantity = Math.max(1, parseInt(qtySpan.textContent) || 1);
+            
+            const existing = orders[currentTable].find(item => item.name === itemName);
+            if (existing) {
+                existing.quantity += quantity;
+            } else {
+                orders[currentTable].push({ 
+                    name: itemName, 
+                    price: price, 
+                    quantity: quantity,
+                    addedAt: new Date().toLocaleTimeString()
+                });
+            }
+            
+            // Reset menu quantity display
+            qtySpan.textContent = '0';
+            
+            updateOrderDisplay();
+            showNotification(`${quantity}x ${itemName} added to order!`, 'success');
+        }
+
+        function updateOrderDisplay() {
+            const container = document.getElementById('order-items');
+            container.innerHTML = '';
+            
+            if (currentTable && orders[currentTable].length > 0) {
+                orders[currentTable].forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'order-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong>${item.name}</strong><br>
+                            <small>Added: ${item.addedAt}</small>
+                        </div>
+                        <div class="order-item-controls">
+                            <button class="qty-btn" onclick="adjustOrderQuantity('${item.name}', -1)">-</button>
+                            <span>${item.quantity}</span>
+                            <button class="qty-btn" onclick="adjustOrderQuantity('${item.name}', 1)">+</button>
+                            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            <button class="secondary-btn" onclick="removeFromOrder('${item.name}')">Remove</button>
+                        </div>
+                    `; 
+                    container.appendChild(div);
+                });
+                updateTotals();
+            } else {
+                container.innerHTML = '<p>No items in order.</p>';
+            }
+        }
+        function adjustOrderQuantity(itemName, delta) {
+            if (!currentTable) return;
+
+            const item = orders[currentTable].find(i => i.name === itemName);
+            if (item) {
+                item.quantity = Math.max(0, item.quantity + delta);
+                if (item.quantity === 0) {
+                    removeFromOrder(itemName);
+                } else {
+                    updateOrderDisplay();
+                }
+            }
+        }
+        function removeFromOrder(itemName) {
+            if (!currentTable) return;
+
+            orders[currentTable] = orders[currentTable].filter(item => item.name !== itemName);
+            updateOrderDisplay();
+            showNotification(`${itemName} removed from order.`, 'info');
+        }   
+        
+        function updateTotals() {
+            if (!currentTable || !orders[currentTable]) return;
+
+            const subtotal = orders[currentTable].reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.08; // 8% tax
+            const tipPercentage = parseFloat(document.getElementById('tip-select').value);
+            const tipAmount = subtotal * tipPercentage;
+            const total = subtotal + tax + tipAmount;
+
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('tax').textContent = tax.toFixed(2);
+            document.getElementById('tip-amount').textContent = tipAmount.toFixed(2);
+            document.getElementById('order-total').textContent = total.toFixed(2);
+
+            document.getElementById('payment-amount').textContent = total.toFixed(2);
+            document.getElementById('payment-table').textContent = currentTable;
+        }
+        function submitOrder() {
+            if (!currentTable || !orders[currentTable] || orders[currentTable].length === 0) {
+                showNotification('No items in order to submit!', 'error');
+                return;
+            }
+
+            kitchenOrders.push({ table: currentTable, items: [...orders[currentTable]], time: new Date().toLocaleTimeString() });
+            orders[currentTable] = [];
+            updateOrderDisplay();
+            updateKitchenDisplay();
+            showNotification(`Order for Table ${currentTable} submitted!`, 'success');
+        }
+        function updateKitchenDisplay() {
+            const container = document.getElementById('kitchen-orders');
+            container.innerHTML = '';
+            
+            kitchenOrders.forEach(order => {
+                const orderDiv = document.createElement('div');
+                orderDiv.className = 'kitchen-order';
+                orderDiv.innerHTML = `
+                    <strong>Table ${order.table}</strong> - ${order.time}<br>
+                    ${order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                `;
+                container.appendChild(orderDiv);
+            });
+        }
+        function showCategory(category) {
+            document.querySelectorAll('.menu-category').forEach(cat => {
+                cat.classList.remove('active');
+            });
+            document.getElementById(category).classList.add('active');
+
+            document.querySelectorAll('.menu-nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.menu-nav button[onclick="showCategory('${category}')"]`).classList.add('active');
+        }
+        function searchMenu() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            document.querySelectorAll('.menu-item').forEach(item => {
+                const name = item.getAttribute('data-name');
+                if (name.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        function filterByPrice(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.filter-btn[onclick="filterByPrice('${filter}')"]`).classList.add('active');
+
+            document.querySelectorAll('.menu-item').forEach(item => {
+                const price = parseFloat(item.getAttribute('data-price'));
+                if (filter === 'all' || 
+                    (filter === 'under10' && price < 10) || 
+                    (filter === '10to20' && price >= 10 && price <= 20) || 
+                    (filter === 'over20' && price > 20)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            setTimeout(() => {
+                notification.textContent = '';
+                notification.className = 'notification';
+            }, 3000);
+        }
+        function saveOrder() {
+            if (!currentTable || !orders[currentTable] || orders[currentTable].length === 0) {
+                showNotification('No items in order to save!', 'error');
+                return;
+            }
+
+            savedOrders[currentTable] = [...orders[currentTable]];
+            showNotification(`Order for Table ${currentTable} saved!`, 'success');
+        }
+        function openSplitBill() {
+            if (!currentTable || !orders[currentTable] || orders[currentTable].length === 0) {
+                showNotification('No items in order to split!', 'error');
+                return;
+            }
+
+            document.getElementById('split-modal').style.display = 'block';
+            document.getElementById('split-ways').value = 2;
+            calculateSplit();
+        }
+        function closeSplitBill() {
+            document.getElementById('split-modal').style.display = 'none';
+        }
+        function calculateSplit() {
+            const ways = parseInt(document.getElementById('split-ways').value);
+            const subtotal = orders[currentTable].reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.08; // 8% tax
+            const tipPercentage = parseFloat(document.getElementById('tip-select').value);
+            const tipAmount = subtotal * tipPercentage;
+            const total = subtotal + tax + tipAmount;
+
+            const splitAmount = total / ways;
+
+            let resultsHtml = `<h4>Split Bill for Table ${currentTable}</h4>`;
+            resultsHtml += `<p>Total Amount: $${total.toFixed(2)}</p>`;
+            resultsHtml += `<p>Split into ${ways} ways: $${splitAmount.toFixed(2)} each</p>`;
+            
+            document.getElementById('split-results').innerHTML = resultsHtml;
+        }
+        function selectPayment(method) {
+            document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`${method}-payment`).classList.add('selected');
+            document.getElementById('payment-details').style.display = 'block';
+            document.getElementById('payment-section').style.display = 'block';
+            document.getElementById('payment-table').textContent = currentTable;
+            document.getElementById('payment-amount').textContent = document.getElementById('order-total').textContent;
+
+            if (method === 'fonepay') {
+                const qrCodeImage = document.getElementById('qr-code-image');
+                qrCodeImage.src = 'https://api.qrserver.com/v1/create-qr-code/?data=Fonepay%20Payment%20for%20Table%20' + currentTable + '&size=200x200';
+                qrCodeImage.style.display = 'block';
+            } else {
+                document.getElementById('fonepay-qr').style.display = 'none';
+            }
+        }
+        function completePayment() {
+            showNotification(`Payment for Table ${currentTable} completed!`, 'success');
+            document.getElementById('payment-section').style.display = 'none';
+            document.getElementById('main-interface').style.display = 'none';
+            document.getElementById('kitchen-display').style.display = 'none';
+            currentTable = null;
+            orders = {};
+            kitchenOrders = [];
+            document.getElementById('order-items').innerHTML = '';
+            document.getElementById('current-table').textContent = '-';
+            document.getElementById('order-time').textContent = '';
+            document.getElementById('notification').textContent = '';
+            document.getElementById('notification').className = 'notification';
+            document.getElementById('split-modal').style.display = 'none';
+            document.getElementById('split-results').innerHTML = '';
+            document.getElementById('kitchen-orders').innerHTML = '';
+            document.querySelectorAll('.menu-quantity').forEach(span => {
+                span.textContent = '0';
+            });
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.style.display = 'block';
+            });
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.filter-btn.active').classList.add('active');
+            document.getElementById('search-input').value = '';
+            document.querySelectorAll('.menu-nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.menu-nav button[onclick="showCategory(\'veg\')"]').classList.add('active');
+            document.getElementById('kitchen-display').style.display = 'none';
+            document.getElementById('table-selection').style.display = 'block';
+            document.getElementById('main-interface').style.display = 'none';
+            document.getElementById('payment-section').style.display = 'none';
+            document.getElementById('table-grid').innerHTML = '';
+            initialize();
+            showNotification('Thank you for dining with us!', 'success');
+            document.getElementById('notification').textContent = 'Thank you for dining with us!';
+            document.getElementById('notification').className = 'notification success';
+            document.getElementById('notification').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('notification').style.display = 'none';
+            }, 3000);
+            updateKitchenDisplay();
+        }
+        function goBackToOrder() {
+            document.getElementById('payment-section').style.display = 'none';
+            document.getElementById('main-interface').style.display = 'block';
+        }
+        window.onload = initialize;
+
+    </script>
+</body>
+</html>
